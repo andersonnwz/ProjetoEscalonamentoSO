@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "rr.h"
 
 // Estrutura que representa um Processo
 typedef struct {
@@ -11,39 +12,39 @@ typedef struct {
     int tempo_conclusao;
     int tempo_espera;
     int tempo_retorno; // Turnaround time
-} Processo;
+} ProcessoRR;
 
 // Nó da Fila Dinâmica
-typedef struct No {
-    int id_processo; // Armazena o índice do processo na lista principal
-    struct No* proximo;
-} No;
+typedef struct NoRR {
+    int id_processo; 
+    struct NoRR* proximo;
+} NoRR;
 
 // Estrutura da Fila FIFO
 typedef struct {
-    No* frente;
-    No* tras;
-} Fila;
+    NoRR* frente;
+    NoRR* tras;
+} FilaRR;
 
 // Função para criar uma fila vazia
-Fila* criarFila() {
-    Fila* f = (Fila*)malloc(sizeof(Fila));
+static FilaRR* criarFilaRR() {
+    FilaRR* f = (FilaRR*)malloc(sizeof(FilaRR));
     f->frente = NULL;
     f->tras = NULL;
     return f;
 }
 
 // Verifica se a fila está vazia
-bool filaVazia(Fila* f) {
+static bool filaVaziaRR(FilaRR* f) {
     return (f->frente == NULL);
 }
 
 // Insere elemento no final da fila
-void enfileirar(Fila* f, int id_processo) {
-    No* novo = (No*)malloc(sizeof(No));
+static void enfileirarRR(FilaRR* f, int id_processo) {
+    NoRR* novo = (NoRR*)malloc(sizeof(NoRR));
     novo->id_processo = id_processo;
     novo->proximo = NULL;
-    if (filaVazia(f)) {
+    if (filaVaziaRR(f)) {
         f->frente = novo;
         f->tras = novo;
     } else {
@@ -53,9 +54,9 @@ void enfileirar(Fila* f, int id_processo) {
 }
 
 // Remove elemento do início da fila
-int desenfileirar(Fila* f) {
-    if (filaVazia(f)) return -1;
-    No* temp = f->frente;
+static int desenfileirarRR(FilaRR* f) {
+    if (filaVaziaRR(f)) return -1;
+    NoRR* temp = f->frente;
     int id = temp->id_processo;
     f->frente = f->frente->proximo;
     if (f->frente == NULL) {
@@ -65,8 +66,8 @@ int desenfileirar(Fila* f) {
     return id;
 }
 
-// Implementação do Algoritmo Round Robin
-void executarRoundRobin(Processo proc[], int n, int quantum) {
+// Lógica principal do Algoritmo Round Robin
+static void executarRoundRobinLogica(ProcessoRR proc[], int n, int quantum) {
     int tempo_atual = 0;
     int concluidos = 0;
     bool inserido_na_fila[n];
@@ -76,20 +77,20 @@ void executarRoundRobin(Processo proc[], int n, int quantum) {
         proc[i].tempo_restante = proc[i].tempo_burst;
     }
 
-    Fila* fila = criarFila();
+    FilaRR* fila = criarFilaRR();
 
     printf("\n=== ORDEM DE EXECUCAO DA CPU ===\n");
 
     // Adiciona processos que chegam no tempo 0
     for (int i = 0; i < n; i++) {
         if (proc[i].tempo_chegada == 0) {
-            enfileirar(fila, i);
+            enfileirarRR(fila, i);
             inserido_na_fila[i] = true;
         }
     }
 
     // Se no tempo 0 nenhum processo chegou, avança o tempo até o primeiro chegar
-    if (filaVazia(fila)) {
+    if (filaVaziaRR(fila)) {
         int menor_chegada = proc[0].tempo_chegada;
         for (int i = 1; i < n; i++) {
             if (proc[i].tempo_chegada < menor_chegada) {
@@ -99,26 +100,25 @@ void executarRoundRobin(Processo proc[], int n, int quantum) {
         tempo_atual = menor_chegada;
         for (int i = 0; i < n; i++) {
             if (proc[i].tempo_chegada == tempo_atual) {
-                enfileirar(fila, i);
+                enfileirarRR(fila, i);
                 inserido_na_fila[i] = true;
             }
         }
     }
 
     while (concluidos < n) {
-        if (filaVazia(fila)) {
-            // Caso a fila fique vazia mas ainda existam processos a chegar (tempo ocioso da CPU)
+        if (filaVaziaRR(fila)) {
             tempo_atual++;
             for (int i = 0; i < n; i++) {
                 if (!inserido_na_fila[i] && proc[i].tempo_chegada <= tempo_atual) {
-                    enfileirar(fila, i);
+                    enfileirarRR(fila, i);
                     inserido_na_fila[i] = true;
                 }
             }
             continue;
         }
 
-        int idx = desenfileirar(fila);
+        int idx = desenfileirarRR(fila);
         int tempo_execucao = (proc[idx].tempo_restante > quantum) ? quantum : proc[idx].tempo_restante;
 
         printf("[Tempo %02d - %02d] Processo P%d executando\n", tempo_atual, tempo_atual + tempo_execucao, proc[idx].id);
@@ -126,19 +126,18 @@ void executarRoundRobin(Processo proc[], int n, int quantum) {
         tempo_atual += tempo_execucao;
         proc[idx].tempo_restante -= tempo_execucao;
 
-        // Verifica e enfileira novos processos que chegaram DURANTE essa execução
+        // Verifica novos processos que chegaram durante essa execução
         for (int i = 0; i < n; i++) {
             if (!inserido_na_fila[i] && proc[i].tempo_chegada <= tempo_atual) {
-                enfileirar(fila, i);
+                enfileirarRR(fila, i);
                 inserido_na_fila[i] = true;
             }
         }
 
-        // Se o processo atual ainda não terminou, ele volta para o final da fila
+        // Se ainda não terminou, volta para o fim da fila
         if (proc[idx].tempo_restante > 0) {
-            enfileirar(fila, idx);
+            enfileirarRR(fila, idx);
         } else {
-            // Processo finalizado
             concluidos++;
             proc[idx].tempo_conclusao = tempo_atual;
             proc[idx].tempo_retorno = proc[idx].tempo_conclusao - proc[idx].tempo_chegada;
@@ -165,17 +164,18 @@ void executarRoundRobin(Processo proc[], int n, int quantum) {
     free(fila);
 }
 
-int main() {
+// Função chamada pelo menu principal (declarada no rr.h)
+void executar_menu_rr() {
     int n, quantum;
 
-    printf("=== SIMULADOR ROUND ROBIN ===\n");
+    printf("\n=== SIMULADOR ROUND ROBIN ===\n");
     printf("Digite a quantidade de processos: ");
-    if (scanf("%d", &n) != 1 || n <= 0) return 0;
+    if (scanf("%d", &n) != 1 || n <= 0) return;
 
     printf("Digite o valor do QUANTUM: ");
-    if (scanf("%d", &quantum) != 1 || quantum <= 0) return 0;
+    if (scanf("%d", &quantum) != 1 || quantum <= 0) return;
 
-    Processo proc[n];
+    ProcessoRR proc[n];
 
     for (int i = 0; i < n; i++) {
         proc[i].id = i + 1;
@@ -186,7 +186,5 @@ int main() {
         scanf("%d", &proc[i].tempo_burst);
     }
 
-    executarRoundRobin(proc, n, quantum);
-
-    return 0;
+    executarRoundRobinLogica(proc, n, quantum);
 }
