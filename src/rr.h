@@ -2,6 +2,6 @@
 #define RR_H
 
 // Protótipo da função principal do Round Robin
-void executar_round_robin();
+void executar_menu_rr();
 
-#endif
+#endif // RR_H
