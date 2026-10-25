@@ -3,29 +3,6 @@
 #include <stdbool.h>
 #include "rr.h"
 
-// Estrutura que representa um Processo
-typedef struct {
-    int id;
-    int tempo_chegada;
-    int tempo_burst;
-    int tempo_restante;
-    int tempo_conclusao;
-    int tempo_espera;
-    int tempo_retorno; // Turnaround time
-} ProcessoRR;
-
-// Nó da Fila Dinâmica
-typedef struct NoRR {
-    int id_processo; 
-    struct NoRR* proximo;
-} NoRR;
-
-// Estrutura da Fila FIFO
-typedef struct {
-    NoRR* frente;
-    NoRR* tras;
-} FilaRR;
-
 // Função para criar uma fila vazia
 static FilaRR* criarFilaRR() {
     FilaRR* f = (FilaRR*)malloc(sizeof(FilaRR));
@@ -164,7 +141,7 @@ static void executarRoundRobinLogica(ProcessoRR proc[], int n, int quantum) {
     free(fila);
 }
 
-// Função chamada pelo menu principal (declarada no rr.h)
+// Função chamada pelo menu principal
 void executar_menu_rr() {
     int n, quantum;
 
