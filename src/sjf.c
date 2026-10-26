@@ -13,20 +13,20 @@ Lista* criar_lista() {
 }
 
 // 2. Insere na lista já ordenado pelo menor tempo de execução (SJF)
-void inserir_sjf(Lista *l, Dados d) {
-    if (l == NULL) return;
+void inserir_sjf(Lista *lista, Dados d) {
+    if (lista == NULL) return;
 
     No *novo = (No*) malloc(sizeof(No));
     novo->informacoes = d;
     novo->proximo = NULL;
 
     // Se a lista estiver vazia ou o novo processo for menor que o primeiro
-    if (l->primeiro == NULL || d.tempo_execucao < l->primeiro->informacoes.tempo_execucao) {
-        novo->proximo = l->primeiro;
-        l->primeiro = novo;
+    if (lista->primeiro == NULL || d.tempo_execucao < lista->primeiro->informacoes.tempo_execucao) {
+        novo->proximo = lista->primeiro;
+        lista->primeiro = novo;
     } else {
         // Percorre a lista até encontrar a posição correta
-        No *atual = l->primeiro;
+        No *atual = lista->primeiro;
         while (atual->proximo != NULL && atual->proximo->informacoes.tempo_execucao <= d.tempo_execucao) {
             atual = atual->proximo;
         }
@@ -34,7 +34,7 @@ void inserir_sjf(Lista *l, Dados d) {
         atual->proximo = novo;
     }
 
-    l->tamanho++;
+    lista->tamanho++;
 }
 
 // 3. Remove o primeiro processo (o de menor tempo) para executar no CPU

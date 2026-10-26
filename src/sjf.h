@@ -22,9 +22,9 @@ typedef struct Lista {
 
 // Protótipos das funções
 Lista* criar_lista();
-void inserir_sjf(Lista *l, Dados d);
+void inserir_sjf(Lista *lista, Dados d);
 int remover_primeiro(Lista *l, Dados *processo_removido);
 void libertar_lista(Lista *l);
 void executar_menu_sjf();
 
-#endif // SJF_H
+#endif 
